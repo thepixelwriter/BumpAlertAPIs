@@ -2,10 +2,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "bumpalert-api",
   "main": "src/worker.ts",
-  "compatibility_date": "2026-09-11",
+  "compatibility_date": "2026-08-03",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com",
+    "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com,http://localhost:8100,http://localhost:4200",
     "PORT": "3000"
   },
   "d1_databases": [

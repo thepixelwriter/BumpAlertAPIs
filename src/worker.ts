@@ -12,6 +12,6 @@ const handleRequest = httpServerHandler({ port: 3000 });
 export default {
   async fetch(request: Request, env: { DB: D1DatabaseLike }, context: unknown): Promise<Response> {
     await connectDatabase(env.DB);
-    return handleRequest(request, env, context);
+    return handleRequest.fetch(request, env, context);
   },
 };

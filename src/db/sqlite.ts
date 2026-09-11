@@ -11,8 +11,6 @@ export interface D1DatabaseLike {
 }
 
 let database: D1DatabaseLike | undefined;
-let databaseReady: Promise<void> | undefined;
-
 export const pool = {
   query: query,
 };
@@ -30,8 +28,6 @@ export async function connectDatabase(nextDatabase?: D1DatabaseLike): Promise<vo
     throw new Error('D1 database is not configured');
   }
 
-  databaseReady ??= initializeDatabase();
-  await databaseReady;
 }
 
 export async function initializeDatabase(): Promise<void> {
@@ -39,9 +35,7 @@ export async function initializeDatabase(): Promise<void> {
     throw new Error('D1 database is not configured');
   }
 
-  await database.exec(`
-    PRAGMA foreign_keys = ON;
-
+  const schema = `
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       name TEXT NOT NULL,
@@ -81,7 +75,11 @@ export async function initializeDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_reports_user_created ON reports(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_reports_user_status ON reports(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_reports_location ON reports(latitude, longitude);
-  `);
+  `;
+
+  for (const statement of schema.split(';').map((value) => value.trim()).filter(Boolean)) {
+    await database.exec(statement);
+  }
 }
 
 async function query<T = DatabaseRow>(text: string, params: unknown[] = []): Promise<{ rows: T[] }> {
