@@ -94,7 +94,11 @@ Interactive API documentation is available at:
 https://api.bumpalert.thepixelwriter.com/api/swagger
 ```
 
-The raw OpenAPI document is available at `/api/swagger.json`.
+The raw OpenAPI document is available at:
+
+```text
+https://api.bumpalert.thepixelwriter.com/api/swagger.json
+```
 
 ### Auth
 
