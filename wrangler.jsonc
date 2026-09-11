@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bumpalert-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com",
+    "PORT": "3000"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bumpalert-db",
+      "database_id": "5ab681bb-39d6-47dc-8855-1275c26aebd7",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "api.bumpalert.thepixelwriter.com",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

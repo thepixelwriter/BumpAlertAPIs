@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import { z } from 'zod';
-import { pool } from '../db/postgres';
+import { pool } from '../db/sqlite';
 import { ApiError } from '../middleware/error-handler';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
@@ -38,7 +38,7 @@ function serializeReport(row: Record<string, unknown>) {
     severity: row.severity,
     gForce: row.g_force,
     status: row.status,
-    metadata: row.metadata ?? {},
+    metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata ?? {},
     createdAt: row.created_at,
   };
 }
@@ -93,7 +93,7 @@ export async function getMyReports(req: AuthenticatedRequest, res: Response): Pr
   );
 
   const countResult = await pool.query(
-    `SELECT COUNT(*)::int AS total FROM reports WHERE user_id = $1 ${query.status ? 'AND status = $2' : ''}`,
+    `SELECT CAST(COUNT(*) AS INTEGER) AS total FROM reports WHERE user_id = $1 ${query.status ? 'AND status = $2' : ''}`,
     query.status ? [req.user!.id, query.status] : [req.user!.id],
   );
 
@@ -116,7 +116,7 @@ export async function listNearbyReports(req: AuthenticatedRequest, res: Response
     `SELECT * FROM reports
      WHERE user_id = $1
        AND ABS(latitude - $2) <= ($3 / 111000)
-       AND ABS(longitude - $4) <= ($3 / (111000 * COS(RADIANS($2))))
+      AND ABS(longitude - $4) <= ($3 / 111000)
      ORDER BY created_at DESC`,
     [req.user!.id, query.lat, query.radiusMeters, query.lng],
   );

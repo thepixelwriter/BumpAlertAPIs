@@ -5,9 +5,10 @@
   "main": "dist/server.js",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "wrangler dev",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "wrangler dev",
+    "deploy": "wrangler d1 migrations apply bumpalert-db --remote && wrangler deploy",
     "lint": "eslint . --ext .ts",
     "test": "vitest run"
   },
@@ -20,7 +21,6 @@
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "pg": "^8.18.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -30,12 +30,12 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.10.5",
-    "@types/pg": "^8.16.0",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
     "eslint": "^8.57.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "wrangler": "^4.129.1"
   }
 }

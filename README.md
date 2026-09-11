@@ -7,7 +7,8 @@ This is the backend API for BumpAlert. It handles user authentication, password 
 - Node.js
 - TypeScript
 - Express
-- PostgreSQL
+- Cloudflare Workers
+- Cloudflare D1 with SQLite
 - JWT for authentication
 - bcrypt for password hashing
 - Zod for validation
@@ -20,14 +21,14 @@ This is the backend API for BumpAlert. It handles user authentication, password 
 - Secure JWT-based auth
 - User-scoped road anomaly storage
 - Report listing and status updates
-- PostgreSQL storage for future relational data needs
+- SQLite storage through Cloudflare D1
 
 ## Requirements
 
 - Node.js 20+
 - npm
-- Docker and Docker Compose
-- PostgreSQL
+- Cloudflare account
+- Wrangler
 
 ## Setup
 
@@ -38,25 +39,25 @@ This is the backend API for BumpAlert. It handles user authentication, password 
 copy .env.example .env
 ```
 
-3. Update the values in `.env` for your local environment.
+3. Update the values in `.env` for local development.
 
 Example:
 
 ```env
 PORT=3000
-DB_URL=postgresql://postgres:postgres@localhost:5432/bumpalert
 JWT_SECRET=change_this_to_a_secure_secret
 CORS_ORIGIN=http://localhost:4200
 GOOGLE_CLIENT_ID=
 ```
 
-## Start PostgreSQL
+## Run locally
 
 ```bash
-docker compose up -d
+npm install
+npm run dev
 ```
 
-This starts a local PostgreSQL instance on port 5432.
+Wrangler uses a local D1 database for development.
 
 ## Install dependencies
 
@@ -64,23 +65,26 @@ This starts a local PostgreSQL instance on port 5432.
 npm install
 ```
 
-## Run in development mode
+## Apply the remote D1 schema
 
 ```bash
-npm run dev
+npx wrangler d1 migrations apply bumpalert-db --remote
 ```
 
-## Build the server
+## Configure secrets
 
 ```bash
-npm run build
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put GOOGLE_CLIENT_ID
 ```
 
-## Start the compiled server
+## Deploy the API
 
 ```bash
-npm start
+npm run deploy
 ```
+
+The API is deployed to `https://api.bumpalert.thepixelwriter.com`.
 
 ## API overview
 
@@ -111,4 +115,4 @@ All report routes require a bearer token.
 
 ## Notes
 
-This server is designed to keep user-specific anomaly records separate from other app data and to support future relational features in the same PostgreSQL database.
+This server keeps user-specific anomaly records separate in D1 and runs entirely on Cloudflare Workers.

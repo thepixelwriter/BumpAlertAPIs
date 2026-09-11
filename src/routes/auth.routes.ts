@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
-import { pool } from '../db/postgres';
+import { pool } from '../db/sqlite';
 import { ApiError } from '../middleware/error-handler';
 import { asyncHandler } from '../middleware/async-handler';
 import { hashPassword, createResetToken, hashToken, signToken, comparePassword } from '../utils/security';
@@ -36,7 +36,7 @@ const googleSchema = z.object({
 
 const router = Router();
 
-function toUserResponse(user: { id: string; name: string; email: string; provider: string; google_id?: string | null; avatar_url?: string | null; }) {
+function toUserResponse(user: Record<string, any>) {
   return {
     id: user.id,
     name: user.name,
@@ -122,8 +122,8 @@ router.post('/google', asyncHandler(async (req, res) => {
     );
   } else {
     userResult = await pool.query(
-      `UPDATE users
-       SET name = $1, google_id = COALESCE(google_id, $2), avatar_url = COALESCE($3, avatar_url), updated_at = NOW()
+       `UPDATE users
+         SET name = $1, google_id = COALESCE(google_id, $2), avatar_url = COALESCE($3, avatar_url), updated_at = CURRENT_TIMESTAMP
        WHERE email = $4
        RETURNING id, name, email, provider, google_id, avatar_url`,
       [name, googleUser.sub, avatarUrl, email],
@@ -171,7 +171,7 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   const tokenHash = hashToken(payload.token);
   const resetResult = await pool.query(
     `SELECT user_id FROM password_resets
-     WHERE token_hash = $1 AND expires_at > NOW() AND used_at IS NULL
+    WHERE token_hash = $1 AND expires_at > CURRENT_TIMESTAMP AND used_at IS NULL
      ORDER BY created_at DESC
      LIMIT 1`,
     [tokenHash],
@@ -184,8 +184,8 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   const userId = resetResult.rows[0].user_id;
   const passwordHash = hashPassword(payload.password);
 
-  await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, userId]);
-  await pool.query('UPDATE password_resets SET used_at = NOW() WHERE user_id = $1 AND token_hash = $2', [userId, tokenHash]);
+  await pool.query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [passwordHash, userId]);
+  await pool.query('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND token_hash = $2', [userId, tokenHash]);
 
   res.json({ message: 'Password updated successfully' });
 }));
