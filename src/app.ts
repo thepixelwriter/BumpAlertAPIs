@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { healthRouter } from './routes/health.routes';
 import { authRouter } from './routes/auth.routes';
 import { reportRouter } from './routes/report.routes';
+import { swaggerRouter } from './routes/swagger.routes';
 
 export function createApp(): express.Express {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp(): express.Express {
   app.use(morgan('dev'));
 
   app.use('/api/health', healthRouter);
+  app.use('/api/swagger', swaggerRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/reports', reportRouter);
 

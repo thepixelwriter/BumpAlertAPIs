@@ -88,6 +88,14 @@ The API is deployed to `https://api.bumpalert.thepixelwriter.com`.
 
 ## API overview
 
+Interactive API documentation is available at:
+
+```text
+https://api.bumpalert.thepixelwriter.com/api/swagger
+```
+
+The raw OpenAPI document is available at `/api/swagger.json`.
+
 ### Auth
 
 - `POST /api/auth/register`
