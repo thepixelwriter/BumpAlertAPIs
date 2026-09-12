@@ -9,9 +9,29 @@ server.listen(3000);
 
 const handleRequest = httpServerHandler({ port: 3000 });
 
+interface WorkerEnv {
+  DB: D1DatabaseLike;
+  EMAIL: {
+    send(message: {
+      to: string;
+      from: { email: string; name: string };
+      subject: string;
+      html: string;
+      text: string;
+    }): Promise<unknown>;
+  };
+  RESET_URL: string;
+  EMAIL_FROM: string;
+  EMAIL_FROM_NAME: string;
+}
+
 export default {
-  async fetch(request: Request, env: { DB: D1DatabaseLike }, context: unknown): Promise<Response> {
+  async fetch(request: Request, env: WorkerEnv, context: unknown): Promise<Response> {
     await connectDatabase(env.DB);
+    app.locals.resetEmail = env.EMAIL;
+    app.locals.resetUrl = env.RESET_URL;
+    app.locals.emailFrom = env.EMAIL_FROM;
+    app.locals.emailFromName = env.EMAIL_FROM_NAME;
     return handleRequest.fetch(request, env, context);
   },
 };

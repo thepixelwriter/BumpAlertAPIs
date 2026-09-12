@@ -34,6 +34,16 @@ const googleSchema = z.object({
   avatarUrl: z.string().url().optional(),
 });
 
+interface ResetEmailSender {
+  send(message: {
+    to: string;
+    from: { email: string; name: string };
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<unknown>;
+}
+
 const router = Router();
 
 function toUserResponse(user: Record<string, any>) {
@@ -158,9 +168,33 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
     [userId, tokenHash],
   );
 
+  const resetEmail = (req.app.locals as { resetEmail?: ResetEmailSender }).resetEmail;
+  const resetUrl = (req.app.locals as { resetUrl?: string }).resetUrl;
+  const emailFrom = (req.app.locals as { emailFrom?: string }).emailFrom;
+  const emailFromName = (req.app.locals as { emailFromName?: string }).emailFromName;
+  if (!resetEmail || !resetUrl || !emailFrom || !emailFromName) {
+    throw new ApiError(503, 'Password reset email is not configured');
+  }
+
+  const resetLink = new URL(resetUrl);
+  resetLink.searchParams.set('token', token);
+  const resetLinkValue = resetLink.toString();
+
+  try {
+    await resetEmail.send({
+      to: payload.email.toLowerCase(),
+      from: { email: emailFrom, name: emailFromName },
+      subject: 'Reset your BumpAlert password',
+      text: `Use this link to reset your BumpAlert password: ${resetLinkValue}\n\nThis link expires in one hour. If you did not request this, you can ignore this email.`,
+      html: `<p>We received a request to reset your BumpAlert password.</p><p><a href="${resetLinkValue}">Reset your password</a></p><p>This link expires in one hour. If you did not request this, you can ignore this email.</p>`,
+    });
+  } catch (error) {
+    console.error('BumpAlert server: failed to send password reset email', error);
+    throw new ApiError(503, 'Password reset email could not be sent');
+  }
+
   res.json({
     message: 'If an account exists for that email, a reset link has been prepared.',
-    resetToken: token,
   });
 }));
 

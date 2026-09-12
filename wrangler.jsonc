@@ -6,8 +6,17 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com,http://localhost:8100,http://localhost:4200",
-    "PORT": "3000"
+    "PORT": "3000",
+    "RESET_URL": "https://bumpalert.thepixelwriter.com/reset-password",
+    "EMAIL_FROM": "noreply@bumpalert.thepixelwriter.com",
+    "EMAIL_FROM_NAME": "BumpAlert"
   },
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["noreply@bumpalert.thepixelwriter.com"]
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
