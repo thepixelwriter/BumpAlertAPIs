@@ -168,6 +168,8 @@ swaggerRouter.get('/', (_req, res) => {
   res.type('html').send(swaggerHtml);
 });
 
-swaggerRouter.get('.json', (_req, res) => {
+export const swaggerJsonRouter = Router();
+
+swaggerJsonRouter.get('/', (_req, res) => {
   res.json(openApiDocument);
 });
