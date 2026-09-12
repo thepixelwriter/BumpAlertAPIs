@@ -76,7 +76,10 @@ npx wrangler d1 migrations apply bumpalert-db --remote
 ```bash
 npx wrangler secret put JWT_SECRET
 npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put RESEND_API_KEY
 ```
+
+Verify the sender domain in Resend before deploying. The sender address is configured as `noreply@bumpalert.thepixelwriter.com`.
 
 ## Deploy the API
 

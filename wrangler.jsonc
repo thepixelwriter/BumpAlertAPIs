@@ -11,12 +11,6 @@
     "EMAIL_FROM": "noreply@bumpalert.thepixelwriter.com",
     "EMAIL_FROM_NAME": "BumpAlert"
   },
-  "send_email": [
-    {
-      "name": "EMAIL",
-      "allowed_sender_addresses": ["noreply@bumpalert.thepixelwriter.com"]
-    }
-  ],
   "d1_databases": [
     {
       "binding": "DB",
