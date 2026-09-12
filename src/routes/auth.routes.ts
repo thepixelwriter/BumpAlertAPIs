@@ -151,12 +151,11 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
   const userId = userResult.rows[0].id;
   const token = createResetToken();
   const tokenHash = hashToken(token);
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   await pool.query(
     `INSERT INTO password_resets (user_id, token_hash, expires_at)
-     VALUES ($1, $2, $3)`,
-    [userId, tokenHash, expiresAt],
+     VALUES ($1, $2, datetime('now', '+1 hour'))`,
+    [userId, tokenHash],
   );
 
   res.json({
