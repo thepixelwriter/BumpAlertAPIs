@@ -1,7 +1,6 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { healthRouter } from './routes/health.routes';
@@ -17,8 +16,42 @@ export function createApp(): express.Express {
     origin: env.corsOrigin === '*' ? true : env.corsOrigin.split(','),
     credentials: true,
   }));
-  app.use(express.json({ limit: '2mb' }));
-  app.use(morgan('dev'));
+  app.use((req, res, next) => {
+    const startedAt = Date.now();
+    res.setHeader('Cache-Control', 'no-store');
+    res.on('finish', () => {
+      const event = JSON.stringify({
+        event: res.statusCode >= 400 ? 'security.api_request' : 'api.request',
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      });
+      if (res.statusCode >= 400) {
+        console.warn(event);
+      } else {
+        console.log(event);
+      }
+    });
+
+    if (!['GET', 'HEAD', 'POST', 'PATCH', 'OPTIONS'].includes(req.method)) {
+      res.setHeader('Allow', 'GET, HEAD, POST, PATCH, OPTIONS');
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    if (
+      ['POST', 'PATCH'].includes(req.method)
+      && req.path.startsWith('/api/')
+      && !/^application\/(?:[a-z0-9.+-]+\+)?json(?:\s*;|$)/i.test(req.get('content-type') ?? '')
+    ) {
+      res.status(415).json({ error: 'Content-Type must be application/json' });
+      return;
+    }
+
+    next();
+  });
+  app.use(express.json({ limit: '64kb' }));
 
   app.use('/api/health', healthRouter);
   app.use('/api/swagger', swaggerRouter);

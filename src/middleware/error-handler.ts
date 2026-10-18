@@ -19,8 +19,20 @@ function isValidationError(err: unknown): err is { issues?: unknown[]; flatten?:
     || (typeof err === 'object' && err !== null && ('issues' in err || (err as { name?: unknown }).name === 'ZodError'));
 }
 
+function isPayloadTooLargeError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) {
+    return false;
+  }
+
+  return 'type' in err && err.type === 'entity.too.large';
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+  if (isPayloadTooLargeError(err)) {
+    res.status(413).json({ error: 'Request body exceeds the 64 KiB limit' });
+    return;
+  }
   if (isValidationError(err)) {
     const details = typeof err.flatten === 'function' ? err.flatten() : { issues: err.issues ?? [] };
     res.status(400).json({ error: 'Validation failed', details });

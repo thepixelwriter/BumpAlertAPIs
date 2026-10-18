@@ -46,6 +46,7 @@ Example:
 ```env
 PORT=3000
 JWT_SECRET=change_this_to_a_secure_secret
+JWT_EXPIRES_IN=365d
 CORS_ORIGIN=http://localhost:4200
 GOOGLE_CLIENT_ID=
 ```
@@ -124,9 +125,15 @@ All report routes require a bearer token.
 ## Security notes
 
 - Passwords are hashed before storage.
-- JWT tokens are used for authenticated requests.
+- JWT tokens are used for authenticated requests. Sessions last up to 365 days by default and are invalidated when the account password is changed.
 - CORS is restricted to the frontend origin.
 - User data is isolated by user ID.
+- The Worker applies Cloudflare rate limits of 120 requests per minute per client IP overall and 10 per minute for authentication routes.
+- API responses are marked `Cache-Control: no-store`; the API custom domain is served through Cloudflare's edge proxy/CDN without caching personalized responses.
+- JSON request bodies are limited to 64 KiB, report submissions are capped at 100 hazards, and outbound password-reset email requests time out after 8 seconds.
+- Structured request/security events are available through Worker observability and Wrangler tail logs. Workers cannot run host-based Fail2ban; rate-limit bindings provide automated request mitigation.
+- Configure Cloudflare zone WAF rules separately in the Cloudflare dashboard: enable the managed ruleset for `api.bumpalert.thepixelwriter.com`, then add a custom rule matching `http.host eq "api.bumpalert.thepixelwriter.com" and not http.request.method in {"GET" "HEAD" "POST" "PATCH" "OPTIONS"}` with the Block action. Zone-level WAF rules are not deployable from this Worker configuration.
+- Worker execution and D1 operations are bounded by Cloudflare platform limits; Node HTTP server keep-alive/header timeout settings are not supported in the Workers runtime.
 
 ## Notes
 

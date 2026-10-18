@@ -13,7 +13,7 @@ const reportPayloadSchema = z.object({
     timestamp: z.number().int().positive(),
     severity: z.enum(['moderate', 'severe', 'alarming']),
     gForce: z.number().min(0).max(20).optional(),
-  })).min(1),
+  })).min(1).max(100),
 });
 
 const statusSchema = z.object({
@@ -117,7 +117,8 @@ export async function listNearbyReports(req: AuthenticatedRequest, res: Response
      WHERE user_id = $1
        AND ABS(latitude - $2) <= ($3 / 111000)
       AND ABS(longitude - $4) <= ($3 / 111000)
-     ORDER BY created_at DESC`,
+     ORDER BY created_at DESC
+     LIMIT 200`,
     [req.user!.id, query.lat, query.radiusMeters, query.lng],
   );
 

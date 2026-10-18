@@ -4,12 +4,31 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-08-03",
   "compatibility_flags": ["nodejs_compat"],
+  "ratelimits": [
+    {
+      "name": "API_RATE_LIMITER",
+      "namespace_id": "621845903",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "621845904",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
   "vars": {
     "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com,http://localhost:8100,http://localhost:4200",
     "PORT": "3000",
     "RESET_URL": "https://bumpalert.thepixelwriter.com/reset-password",
     "EMAIL_FROM": "noreply@thepixelwriter.com",
-    "EMAIL_FROM_NAME": "BumpAlert"
+    "EMAIL_FROM_NAME": "BumpAlert",
+    "GOOGLE_CLIENT_ID": "288699491060-dpqs0qkivrqa7d4dlka4s8slgkbu7koj.apps.googleusercontent.com"
   },
   "d1_databases": [
     {
@@ -26,6 +45,7 @@
     }
   ],
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "head_sampling_rate": 1
   }
 }

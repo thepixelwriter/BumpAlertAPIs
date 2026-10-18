@@ -4,7 +4,8 @@ import { OAuth2Client } from 'google-auth-library';
 import { pool } from '../db/sqlite';
 import { ApiError } from '../middleware/error-handler';
 import { asyncHandler } from '../middleware/async-handler';
-import { hashPassword, createResetToken, hashToken, signToken, comparePassword } from '../utils/security';
+import { requireAuth } from '../middleware/auth';
+import { hashPassword, createResetToken, hashToken, signToken, comparePassword, getPasswordVersion } from '../utils/security';
 import { env } from '../config/env';
 
 const registerSchema = z.object({
@@ -36,6 +37,10 @@ const googleSchema = z.object({
 
 const router = Router();
 
+router.get('/session', requireAuth, (_req, res) => {
+  res.json({ valid: true });
+});
+
 function toUserResponse(user: Record<string, any>) {
   return {
     id: user.id,
@@ -59,12 +64,17 @@ router.post('/register', asyncHandler(async (req, res) => {
   const userResult = await pool.query(
     `INSERT INTO users (name, email, password_hash, provider)
      VALUES ($1, $2, $3, 'local')
-     RETURNING id, name, email, provider, google_id, avatar_url`,
+     RETURNING id, name, email, provider, google_id, avatar_url, password_hash`,
     [payload.name.trim(), payload.email.toLowerCase(), passwordHash],
   );
 
   const user = userResult.rows[0];
-  const token = signToken({ userId: user.id, email: user.email, name: user.name });
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    passwordVersion: getPasswordVersion(user.password_hash),
+  });
 
   res.status(201).json({ token, user: toUserResponse(user) });
 }));
@@ -83,7 +93,12 @@ router.post('/login', asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Invalid email or password');
   }
 
-  const token = signToken({ userId: user.id, email: user.email, name: user.name });
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    passwordVersion: getPasswordVersion(user.password_hash),
+  });
   res.json({ token, user: toUserResponse(user) });
 }));
 
@@ -109,7 +124,7 @@ router.post('/google', asyncHandler(async (req, res) => {
   const avatarUrl = payload.avatarUrl ?? googleUser.picture ?? null;
 
   let userResult = await pool.query(
-    `SELECT id, name, email, provider, google_id, avatar_url FROM users WHERE email = $1`,
+    `SELECT id, name, email, provider, google_id, avatar_url, password_hash FROM users WHERE email = $1`,
     [email],
   );
 
@@ -117,7 +132,7 @@ router.post('/google', asyncHandler(async (req, res) => {
     userResult = await pool.query(
       `INSERT INTO users (name, email, provider, google_id, avatar_url)
        VALUES ($1, $2, 'google', $3, $4)
-       RETURNING id, name, email, provider, google_id, avatar_url`,
+       RETURNING id, name, email, provider, google_id, avatar_url, password_hash`,
       [name, email, googleUser.sub, avatarUrl],
     );
   } else {
@@ -125,13 +140,18 @@ router.post('/google', asyncHandler(async (req, res) => {
        `UPDATE users
          SET name = $1, google_id = COALESCE(google_id, $2), avatar_url = COALESCE($3, avatar_url), updated_at = CURRENT_TIMESTAMP
        WHERE email = $4
-       RETURNING id, name, email, provider, google_id, avatar_url`,
+       RETURNING id, name, email, provider, google_id, avatar_url, password_hash`,
       [name, googleUser.sub, avatarUrl, email],
     );
   }
 
   const user = userResult.rows[0];
-  const token = signToken({ userId: user.id, email: user.email, name: user.name });
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    passwordVersion: getPasswordVersion(user.password_hash),
+  });
   res.json({ token, user: toUserResponse(user) });
 }));
 
@@ -189,6 +209,7 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
         Authorization: `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(8000),
       body: JSON.stringify({
         from: `${emailFromName} <${emailFrom}>`,
         to: [payload.email.toLowerCase()],

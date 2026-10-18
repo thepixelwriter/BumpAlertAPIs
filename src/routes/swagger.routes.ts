@@ -45,6 +45,17 @@ const openApiDocument = {
           '401': { description: 'Invalid credentials' },
         },
       },
+      '/api/auth/session': {
+        get: {
+          tags: ['Authentication'],
+          summary: 'Validate the current login session',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Session is valid' },
+            '401': { description: 'Session is expired or was invalidated after a password change' },
+          },
+        },
+      },
     },
     '/api/auth/google': {
       post: {
@@ -139,7 +150,7 @@ const openApiDocument = {
       AuthResponse: { type: 'object', properties: { token: { type: 'string' }, user: { $ref: '#/components/schemas/User' } } },
       User: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, email: { type: 'string', format: 'email' }, provider: { type: 'string' }, googleId: { type: 'string', nullable: true }, avatarUrl: { type: 'string', nullable: true } } },
       ReportStatus: { type: 'string', enum: ['pending', 'confirmed', 'dismissed', 'submitted'] },
-      ReportSubmission: { type: 'object', required: ['submittedAt', 'hazards'], properties: { deviceId: { type: 'string' }, submittedAt: { type: 'integer' }, hazards: { type: 'array', minItems: 1, items: { $ref: '#/components/schemas/Hazard' } } } },
+      ReportSubmission: { type: 'object', required: ['submittedAt', 'hazards'], properties: { deviceId: { type: 'string' }, submittedAt: { type: 'integer' }, hazards: { type: 'array', minItems: 1, maxItems: 100, items: { $ref: '#/components/schemas/Hazard' } } } },
       Hazard: { type: 'object', required: ['latitude', 'longitude', 'timestamp', 'severity'], properties: { latitude: { type: 'number', minimum: -90, maximum: 90 }, longitude: { type: 'number', minimum: -180, maximum: 180 }, timestamp: { type: 'integer' }, severity: { type: 'string', enum: ['moderate', 'severe', 'alarming'] }, gForce: { type: 'number', minimum: 0, maximum: 20 } } },
       StatusUpdateRequest: { type: 'object', required: ['status'], properties: { status: { $ref: '#/components/schemas/ReportStatus' } } },
     },

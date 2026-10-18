@@ -7,6 +7,11 @@ export interface JwtUserPayload {
   userId: string;
   email: string;
   name: string;
+  passwordVersion: string;
+}
+
+export function getPasswordVersion(passwordHash: string | null | undefined): string {
+  return hashToken(passwordHash ?? 'no-password-set');
 }
 
 export function signToken(payload: JwtUserPayload): string {
