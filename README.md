@@ -126,7 +126,8 @@ All report routes require a bearer token.
 
 - Passwords are hashed before storage.
 - JWT tokens are used for authenticated requests. Sessions last up to 365 days by default and are invalidated when the account password is changed.
-- CORS is restricted to the frontend origin.
+- CORS allows the hosted web app during the transition, local development, and the default Capacitor origins (`https://localhost` on Android and `capacitor://localhost` on iOS). Capacitor preflight requests do not consume the stricter authentication rate limit.
+- The planned distribution is native-only: Android and iOS apps will call the API, while `bumpalert.thepixelwriter.com` will become a landing page linking to the app stores. Once that replaces the hosted PWA, remove its origin and the local web development origins from the production `CORS_ORIGIN` allowlist; retain only the origins required by native clients.
 - User data is isolated by user ID.
 - The Worker applies Cloudflare rate limits of 120 requests per minute per client IP overall and 10 per minute for authentication routes.
 - API responses are marked `Cache-Control: no-store`; the API custom domain is served through Cloudflare's edge proxy/CDN without caching personalized responses.

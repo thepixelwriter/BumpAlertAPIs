@@ -32,7 +32,7 @@ export async function enforceRequestRateLimits(
   }
 
   const pathname = new URL(request.url).pathname;
-  if (pathname.startsWith('/api/auth/')) {
+  if (request.method !== 'OPTIONS' && pathname.startsWith('/api/auth/')) {
     const authResult = await bindings.AUTH_RATE_LIMITER.limit({ key: `auth:${clientIp}` });
     if (!authResult.success) {
       return tooManyRequests('auth');

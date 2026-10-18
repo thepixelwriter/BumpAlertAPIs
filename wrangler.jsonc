@@ -23,7 +23,9 @@
     }
   ],
   "vars": {
-    "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com,http://localhost:8100,http://localhost:4200",
+    // Keep the hosted PWA and local web origins during the transition.
+    // Remove those three web origins after the landing page replaces the PWA.
+    "CORS_ORIGIN": "https://bumpalert.thepixelwriter.com,http://localhost:8100,http://localhost:4200,https://localhost,capacitor://localhost",
     "PORT": "3000",
     "RESET_URL": "https://bumpalert.thepixelwriter.com/reset-password",
     "EMAIL_FROM": "noreply@thepixelwriter.com",

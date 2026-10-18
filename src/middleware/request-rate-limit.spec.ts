@@ -50,6 +50,20 @@ describe('enforceRequestRateLimits', () => {
     expect(result?.status).toBe(429);
   });
 
+  it('does not count CORS preflight requests against the authentication limit', async () => {
+    const api = limiter(true);
+    const auth = limiter(false);
+
+    const result = await enforceRequestRateLimits(
+      new Request('https://api.example.test/api/auth/login', { method: 'OPTIONS' }),
+      { API_RATE_LIMITER: api, AUTH_RATE_LIMITER: auth },
+    );
+
+    expect(result).toBeNull();
+    expect(api.limit).toHaveBeenCalledOnce();
+    expect(auth.limit).not.toHaveBeenCalled();
+  });
+
   it('does not hide rate-limit service failures', async () => {
     const api: RateLimitBinding = {
       limit: vi.fn(async () => {
