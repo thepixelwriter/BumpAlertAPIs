@@ -137,6 +137,23 @@ router.post('/google', asyncHandler(async (req, res) => {
 
 router.post('/forgot-password', asyncHandler(async (req, res) => {
   const payload = forgotPasswordSchema.parse(req.body);
+  const resendApiKey = (req.app.locals as { resendApiKey?: string }).resendApiKey;
+  const resetUrl = (req.app.locals as { resetUrl?: string }).resetUrl;
+  const emailFrom = (req.app.locals as { emailFrom?: string }).emailFrom;
+  const emailFromName = (req.app.locals as { emailFromName?: string }).emailFromName;
+  if (!resendApiKey || !resetUrl || !emailFrom || !emailFromName) {
+    throw new ApiError(503, 'Password reset email is not configured');
+  }
+
+  let resetLink: URL;
+  try {
+    resetLink = new URL(resetUrl);
+  } catch {
+    throw new ApiError(503, 'Password reset email is not configured correctly');
+  }
+  if (resetLink.protocol !== 'https:' && resetLink.protocol !== 'http:') {
+    throw new ApiError(503, 'Password reset email is not configured correctly');
+  }
 
   const userResult = await pool.query(
     `SELECT id FROM users WHERE email = $1`,
@@ -153,20 +170,15 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
   const tokenHash = hashToken(token);
 
   await pool.query(
+    'UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND used_at IS NULL',
+    [userId],
+  );
+  await pool.query(
     `INSERT INTO password_resets (user_id, token_hash, expires_at)
      VALUES ($1, $2, datetime('now', '+1 hour'))`,
     [userId, tokenHash],
   );
 
-  const resendApiKey = (req.app.locals as { resendApiKey?: string }).resendApiKey;
-  const resetUrl = (req.app.locals as { resetUrl?: string }).resetUrl;
-  const emailFrom = (req.app.locals as { emailFrom?: string }).emailFrom;
-  const emailFromName = (req.app.locals as { emailFromName?: string }).emailFromName;
-  if (!resendApiKey || !resetUrl || !emailFrom || !emailFromName) {
-    throw new ApiError(503, 'Password reset email is not configured');
-  }
-
-  const resetLink = new URL(resetUrl);
   resetLink.searchParams.set('token', token);
   const resetLinkValue = resetLink.toString();
 
@@ -220,7 +232,7 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   const passwordHash = hashPassword(payload.password);
 
   await pool.query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [passwordHash, userId]);
-  await pool.query('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND token_hash = $2', [userId, tokenHash]);
+  await pool.query('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND used_at IS NULL', [userId]);
 
   res.json({ message: 'Password updated successfully' });
 }));
